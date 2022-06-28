@@ -105,4 +105,8 @@ public class ClassRosterView {
         io.print("=== ERROR ===");
         io.print(errorMsg);
     }
+
+    public void displayRemoveSuccessBanner() {
+        io.print("Successfully removed");
+    }
 }
