@@ -11,14 +11,14 @@ public class ClassRosterDaoStubImpl implements ClassRosterDao {
 
     public Student onlyStudent;
 
-    public ClassRosterDaoStubImpl(){
+    public ClassRosterDaoStubImpl() {
         onlyStudent = new Student("0001");
         onlyStudent.setFirstName("Ada");
         onlyStudent.setLastName("Lovelace");
         onlyStudent.setCohort("Java-May-1845");
     }
 
-    public ClassRosterDaoStubImpl(Student testStudent) {
+    public ClassRosterDaoStubImpl(Student testStudent){
         this.onlyStudent = testStudent;
     }
 

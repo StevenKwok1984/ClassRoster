@@ -1,5 +1,6 @@
 package com.sg.classroster.service;
 
+
 import com.sg.classroster.dao.ClassRosterAuditDao;
 import com.sg.classroster.dao.ClassRosterDao;
 import com.sg.classroster.dao.ClassRosterDaoFileImpl;
@@ -14,8 +15,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ClassRosterServiceLayerImplTest {
 
-    public ClassRosterServiceLayerImplTest() {
+    private ClassRosterServiceLayer service;
 
+    public ClassRosterServiceLayerImplTest() {
+        ClassRosterDao dao = new ClassRosterDaoStubImpl();
+        ClassRosterAuditDao auditDao = new ClassRosterAuditDaoStubImpl();
+        service = new ClassRosterServiceLayerImpl(dao, auditDao);
     }
 
     @BeforeAll
@@ -39,163 +44,126 @@ class ClassRosterServiceLayerImplTest {
     }
 
     @Test
-    public void testSomeMethod() {
-        fail("The test case is a prototype.");
+    public void testCreateValidStudent() {
+        // ARRANGE
+        Student student = new Student("0002");
+        student.setFirstName("Charles");
+        student.setLastName("Baggage");
+        student.setCohort(".NET-May-1845");
+        // ACT
+        try {
+            service.createStudent(student);
+        } catch (ClassRosterDuplicateIdException
+                | ClassRosterDataValidationException
+                | ClassRosterPersistenceException e){
+            // ASSERT
+            fail("Student was valid. No exception should have been thrown.");
+        }
+    }
+
+    @Test
+    public void testCreateDuplicateIdStudent() {
+        // ARRANGE
+        Student student = new Student("0001");
+        student.setFirstName("Charles");
+        student.setLastName("Babbage");
+        student.setCohort(".NET-May-1845");
+
+        // ACT
+        try {
+            service.createStudent(student);
+            fail("Expected DupeId Exception was not thrown.");
+        } catch (ClassRosterDataValidationException
+                | ClassRosterPersistenceException e) {
+            // ASSERT
+            fail("Incorrect exception was thrown.");
+        } catch (ClassRosterDuplicateIdException e) {
+            return;
+        }
+    }
+
+    @Test
+    public void testCreateStudentInvalidData() throws Exception{
+        // ARRANGE
+        Student student = new Student("0002");
+        student.setFirstName("");
+        student.setLastName("Babbage");
+        student.setCohort(".NET-May-1845");
+
+        // ACT
+        try {
+            service.createStudent(student);
+            fail("Expected ValidationException was not thrown.");
+        } catch (ClassRosterDuplicateIdException
+                | ClassRosterPersistenceException e) {
+            // ASSERT
+            fail("Incorrect exception was thrown.");
+        } catch (ClassRosterDataValidationException e) {
+            return;
+        }
+    }
+
+    @Test
+    public void testGetAllStudents() throws Exception {
+        // ARRANGE
+        Student testClone = new Student("0001");
+        testClone.setFirstName("Ada");
+        testClone.setLastName("Lovelace");
+        testClone.setCohort("Java-May-1845");
+
+        // ACT &ＡＳＳＥＲＴ
+        assertEquals(1, service.getAllStudents().size(), "Should only have one student.");
+        assertTrue(service.getAllStudents().contains(testClone), "The one student should be Ada.");
+    }
+
+    @Test
+    public void testGetStudent() throws Exception {
+        // ARRANGE
+        Student testClone = new Student("0001");
+        testClone.setFirstName("Ada");
+        testClone.setLastName("Lovelace");
+        testClone.setCohort("Java-May-1845");
+
+        // ACT & ASSERT
+        Student shouldBeAda = service.getStudent("0001");
+        assertNotNull(shouldBeAda, "Getting 0001 should be not null.");
+        assertEquals(testClone, shouldBeAda, "Student stored under 0001 should be Ada.");
+
+        Student shouldBeNull = service.getStudent("0042");
+        assertNull(shouldBeNull, "Getting 0042 should be null.");
+    }
+
+    @Test
+    public void testRemoveStudent() throws Exception {
+        // ARRANGE
+        Student testClone = new Student("0001");
+        testClone.setFirstName("Ada");
+        testClone.setLastName("Lovelace");
+        testClone.setCohort("Java-May-1845");
+
+        // ACT & ASSERT
+        Student shouldBeAda = service.removeStudent("0001");
+        assertNotNull(shouldBeAda, "Removing 0001 should be not null.");
+        assertEquals(testClone, shouldBeAda, "Student removed from 0001 should be Ada.");
+
+        Student shouldBeNull = service.removeStudent("0042");
+        assertNull( shouldBeNull, "Removing 0042 should be null.");
     }
 
 
-    public static class ClassRosterAuditDaoStubImpl {
-    }
-
-    static class ClassRosterDaoFileImplTest {
-
-        ClassRosterDao testDao;
-
-        public ClassRosterDaoFileImplTest() {
-        }
-
-        @BeforeAll
-        public static void setUpClass() {
-        }
-
-        @AfterAll
-        public static void tearDownClass() {
-        }
-
-        @BeforeEach
-        public void setUp() throws Exception{
-            String testFile = "testroster.txt";
-            // Use the FileWriter to quickly blank the file
-            new FileWriter(testFile);
-            testDao = new ClassRosterDaoFileImpl(testFile);
-        }
-
-        @AfterEach
-        public void tearDown() {
-        }
-
-        @Test
-        public void testAddGetStudent() throws Exception {
-            // Create our method test inputs
-            String studentId = "0001";
-            Student student = new Student(studentId);
-            student.setFirstName("Ada");
-            student.setLastName("Lovelace");
-            student.setCohort("Java-May-1845");
-
-            //  Add the student to the DAO
-            testDao.addStudent(studentId, student);
-            // Get the student from the DAO
-            Student retrievedStudent = testDao.getStudent(studentId);
-
-            // Check the data is equal
-            assertEquals(student.getStudentId(),
-                    retrievedStudent.getStudentId(),
-                    "Checking student id.");
-            assertEquals(student.getFirstName(),
-                    retrievedStudent.getFirstName(),
-                    "Checking student first name.");
-            assertEquals(student.getLastName(),
-                    retrievedStudent.getLastName(),
-                    "Checking student last name.");
-            assertEquals(student.getCohort(),
-                    retrievedStudent.getCohort(),
-                    "Checking student cohort.");
-        }
-
-        @Test
-        public void testAddGetAllStudents() throws Exception {
-            // Create our first student
-            Student firstStudent = new Student("0001");
-            firstStudent.setFirstName("Ada");
-            firstStudent.setLastName("Lovelace");
-            firstStudent.setCohort("Java-May-1845");
-
-            // Create our second student
-            Student secondStudent = new Student("0002");
-            secondStudent.setFirstName("Charles");
-            secondStudent.setLastName("Babbage");
-            secondStudent.setCohort(".NET-May-1845");
-
-            // Add both our students to the DAO
-            testDao.addStudent(firstStudent.getStudentId(), firstStudent);
-            testDao.addStudent(secondStudent.getStudentId(), secondStudent);
-
-            // Retrieve the list of all students within the DAO
-            List<Student> allStudents = testDao.getAllStudents();
-
-            // First check the general contents of the list
-            assertNotNull(allStudents, "The list of students must not null");
-            assertEquals(2, allStudents.size(),"List of students should have 2 students.");
-
-            // Then the specifics
-            assertTrue(testDao.getAllStudents().contains(firstStudent),
-                    "The list of students should include Ada.");
-            assertTrue(testDao.getAllStudents().contains(secondStudent),
-                    "The list of students should include Charles.");
-
-        }
-
-        @Test
-        public void testRemoveStudent() throws Exception {
-            // Create two new students
-            Student firstStudent = new Student("0001");
-            firstStudent.setFirstName("Ada");
-            firstStudent.setLastName("Lovelace");
-            firstStudent.setCohort("Java-May-1945");
-
-            Student secondStudent = new Student("0002");
-            secondStudent.setFirstName("Charles");
-            secondStudent.setLastName("Babbage");
-            secondStudent.setCohort(".NET-May-1945");
-
-            // Add both to the DAO
-            testDao.addStudent(firstStudent.getStudentId(), firstStudent);
-            testDao.addStudent(secondStudent.getStudentId(), secondStudent);
-
-            // remove the first student - Ada
-            Student removedStudent = testDao.removeStudent(firstStudent.getStudentId());
-
-            // Check that the correct object was removed.
-            assertEquals(removedStudent, firstStudent, "The removed student should be Ada.");
-
-            // Get all the students
-            List<Student> allStudents = testDao.getAllStudents();
-
-            // First check the general contents of the list
-            assertNotNull( allStudents, "All students list should be not null.");
-            assertEquals( 1, allStudents.size(), "All students should only have 1 student.");
-
-            // Then the specifics
-            assertFalse( allStudents.contains(firstStudent), "All students should NOT include Ada.");
-            assertTrue( allStudents.contains(secondStudent), "All students should NOT include Charles.");
-
-            // Remove the second student
-            removedStudent = testDao.removeStudent(secondStudent.getStudentId());
-            // Check that the correct object was removed.
-            assertEquals( removedStudent, secondStudent, "The removed student should be Charles.");
-
-            // retrieve all of the students again, and check the list.
-            allStudents = testDao.getAllStudents();
-
-            // Check the contents of the list - it should be empty
-            assertTrue( allStudents.isEmpty(), "The retrieved list of students should be empty.");
-
-            // Try to 'get' both students by their old id - they should be null!
-            Student retrievedStudent = testDao.getStudent(firstStudent.getStudentId());
-            assertNull(retrievedStudent, "Ada was removed, should be null.");
-
-            retrievedStudent = testDao.getStudent(secondStudent.getStudentId());
-            assertNull(retrievedStudent, "Charles was removed, should be null.");
-
-        }
 
 
-        public static class ClassRosterAuditDaoStubImpl implements ClassRosterAuditDao {
-            @Override
-            public void writeAuditEntry(String entry) throws ClassRosterPersistenceException {
-                // do nothing ...
-            }
-        }
-    }
+
+
+
+
+
+
+
+
+
 }
+
+
+
+
