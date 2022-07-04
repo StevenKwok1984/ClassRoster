@@ -10,6 +10,22 @@ import com.sg.classroster.ui.UserIOConsoleImpl;
 
 public class App {
     public static void main(String[] args) throws ClassRosterPersistenceException {
+
+
+        UserIO myIo = new UserIOConsoleImpl();
+        ClassRosterView myView = new ClassRosterView(myIo);
+        ClassRosterDao myDao = new ClassRosterDaoFileImpl();
+        ClassRosterAuditDao myAuditDao =
+                new ClassRosterAuditDaoFileImpl();
+        ClassRosterServiceLayer myService =
+                new ClassRosterServiceLayerImpl(myDao, myAuditDao);
+        ClassRosterController controller =
+                new ClassRosterController(myService, myView);
+        controller.run();
+
+
+
+        /*
         // Instantiate the UserIO implementation
         UserIO myIo = new UserIOConsoleImpl();
         // Instantiate the View and wire the UserIO implementation into it
@@ -24,5 +40,9 @@ public class App {
         ClassRosterController controller = new ClassRosterController(myService, myView);
         // Kick off the Controller
         controller.run();
+
+         */
+
     }
+
 }
